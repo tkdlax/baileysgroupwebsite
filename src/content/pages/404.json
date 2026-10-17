@@ -7,9 +7,10 @@
  },
  "bodyAttrs": {},
  "headPage": [
-  "<title>Not Found</title>",
-  "<meta content=\"Not Found\" property=\"og:title\"/>",
-  "<meta content=\"Not Found\" property=\"twitter:title\"/>"
+  "<title>Page Not Found | Bailey's Group</title>",
+  "<meta content=\"noindex\" name=\"robots\"/>",
+  "<meta content=\"Page Not Found | Bailey's Group\" property=\"og:title\"/>",
+  "<meta content=\"Page Not Found | Bailey's Group\" property=\"twitter:title\"/>"
  ],
  "hasNav": false,
  "hasFooter": false,
