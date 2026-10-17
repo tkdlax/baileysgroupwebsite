@@ -11,24 +11,48 @@ import { withMedia as m } from '../lib/media';
 const { p } = Astro.props as { p: any };
 // Google Tag Manager container for baileysgroup.com (its own container, not baileysallied's GTM-NZCQRB3).
 const GTM_ID = 'GTM-NXMXCGTV';
+// GTM only runs on the real domain, so netlify.app previews send no analytics hits.
+const GTM_HOSTS = ['baileysgroup.com', 'www.baileysgroup.com'];
+const SITE = 'https://www.baileysgroup.com';
+const isPage = p.url !== '/404';
+const canonical = SITE + (p.url === '/' ? '/' : p.url);
+const headStr = p.headPage.join('\n');
+const decode = (t: string) => t.replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"');
+const title = decode(headStr.match(/<title>([^<]*)<\/title>/)?.[1] ?? '');
+const description = decode(headStr.match(/<meta content="([^"]*)" name="description"/)?.[1] ?? '');
+const OG_IMAGE = 'https://media.baileysallied.com/baileysgroup/video/bcsg-intro-poster-1280.webp';
+const YEAR = String(new Date().getFullYear());
 ---
 <!DOCTYPE html>
 <html {...p.htmlAttrs}>
 <head>
 <Fragment set:html={m(head.join('\n'))} />
-<script is:inline define:vars={{ GTM_ID }}>
+<script is:inline define:vars={{ GTM_ID, GTM_HOSTS }}>
   /* GTM, injected after the page's own load event (or at 4 s at the latest), same as baileysallied.com (CO-122).
      dataLayer pushes before then are queued. */
-  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var go=function(){if(w.__bgGtm)return;w.__bgGtm=1;var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);};if(d.readyState==='complete'){setTimeout(go,0);}else{w.addEventListener('load',function(){setTimeout(go,0);});setTimeout(go,4000);}})(window,document,'script','dataLayer',GTM_ID);
+  if (GTM_HOSTS.indexOf(location.hostname) !== -1) (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var go=function(){if(w.__bgGtm)return;w.__bgGtm=1;var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);};if(d.readyState==='complete'){setTimeout(go,0);}else{w.addEventListener('load',function(){setTimeout(go,0);});setTimeout(go,4000);}})(window,document,'script','dataLayer',GTM_ID);
 </script>
 <Fragment set:html={m(p.headPage.join('\n'))} />
+{isPage && <>
+<link rel="canonical" href={canonical} />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Bailey's Consolidated Services Group" />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={OG_IMAGE} />
+<meta property="og:image:width" content="1280" />
+<meta property="og:image:height" content="720" />
+<meta name="twitter:card" content="summary_large_image" />
+</>}
 </head>
 <body {...p.bodyAttrs}>
 <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`} height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
 {p.hasNav && <Nav current={p.navCurrent ?? []} />}
 <Fragment set:html={m(p.main)} />
-{p.hasFooter && <Fragment set:html={m(footer)} />}
+{p.hasFooter && <Fragment set:html={m(footer.replace('{{YEAR}}', YEAR))} />}
 <Fragment set:html={m(tail.join('\n'))} />
 <Fragment set:html={m(p.tailPage.join('\n'))} />
+<script is:inline>document.querySelectorAll('[data-current-year]').forEach(function(e){e.textContent=String(new Date().getFullYear());});</script>
 </body>
 </html>
