@@ -1,0 +1,14 @@
+# Netlify config for the baileysgroup.com phase-1 rebuild (see MIGRATION-STATUS.md).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Astro 7.4 requires Node >= 22.22.0
+  NODE_VERSION = "22"
+
+# Preview-only noindex: adds X-Robots-Tag on *.netlify.app hosts so the preview never competes with the
+# live Webflow site. Custom domains (www.baileysgroup.com after cutover) are unaffected.
+[[edge_functions]]
+  path = "/*"
+  function = "noindex-netlify-app"
