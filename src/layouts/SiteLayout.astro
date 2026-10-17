@@ -9,14 +9,22 @@ import footer from '../chrome/footer.html?raw';
 import Nav from '../components/Nav.astro';
 import { withMedia as m } from '../lib/media';
 const { p } = Astro.props as { p: any };
+// Google Tag Manager container for baileysgroup.com (its own container, not baileysallied's GTM-NZCQRB3).
+const GTM_ID = 'GTM-NXMXCGTV';
 ---
 <!DOCTYPE html>
 <html {...p.htmlAttrs}>
 <head>
 <Fragment set:html={m(head.join('\n'))} />
+<script is:inline define:vars={{ GTM_ID }}>
+  /* GTM, injected after the page's own load event (or at 4 s at the latest), same as baileysallied.com (CO-122).
+     dataLayer pushes before then are queued. */
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var go=function(){if(w.__bgGtm)return;w.__bgGtm=1;var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);};if(d.readyState==='complete'){setTimeout(go,0);}else{w.addEventListener('load',function(){setTimeout(go,0);});setTimeout(go,4000);}})(window,document,'script','dataLayer',GTM_ID);
+</script>
 <Fragment set:html={m(p.headPage.join('\n'))} />
 </head>
 <body {...p.bodyAttrs}>
+<noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`} height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
 {p.hasNav && <Nav current={p.navCurrent ?? []} />}
 <Fragment set:html={m(p.main)} />
 {p.hasFooter && <Fragment set:html={m(footer)} />}

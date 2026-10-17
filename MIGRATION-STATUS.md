@@ -60,7 +60,8 @@ Waiting on Jake: hosting for a preview link; media destination (then download fr
   Preview: https://baileysgroup.netlify.app (X-Robots-Tag noindex on *.netlify.app only, edge function).
 - All 21 media files on R2 `bms-media/baileysgroup/` (see `src/lib/media.ts`, `media-manifest.csv`). Webflow originals untouched.
 - Contact form removed (Jake): /contact links to the brand sites; reCAPTCHA and form-guard removed.
-- Not done: custom domain / DNS (Jake), GTM container GTM-NXMXCGTV (separate PR).
+- GTM-NXMXCGTV on every page (loaded after window load, dataLayer `dataLayer`), PR #3.
+- Not done: custom domain / DNS (Jake).
 
 ## DECISIONS LOG
 - 2026-10-17: No templates beyond Nav/Footer/Layout — 3 pages don't need them.
