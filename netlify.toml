@@ -12,3 +12,13 @@
 [[edge_functions]]
   path = "/*"
   function = "noindex-netlify-app"
+
+# Eurostile font: same-origin proxy to R2 so @font-face needs no CORS on media.baileysallied.com.
+# The file itself lives in R2 (bms-media/baileysgroup/fonts/), not in this repo.
+[[redirects]]
+  from = "/_media/fonts/*"
+  to = "https://media.baileysallied.com/baileysgroup/fonts/:splat"
+  status = 200
+  force = true
+  [redirects.headers]
+    X-From = "Netlify"

@@ -2048,7 +2048,7 @@ textarea.w-input, textarea.w-select {
 
 @font-face {
   font-family: Eurostile Extended;
-  src: url("https://cdn.prod.website-files.com/66a811178a7051a0f1cb05d8/66a81f464c5a322ffe8c4232_Eurostile%20Extended%20Bold.otf") format("opentype");
+  src: url("/_media/fonts/eurostile-extended-bold.woff2") format("woff2"), url("/_media/fonts/eurostile-extended-bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
