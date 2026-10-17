@@ -1,0 +1,13 @@
+---
+/** Every live URL, at its exact live path: / , /contact , /404 (also the host 404 page). */
+import { getCollection } from 'astro:content';
+import SiteLayout from '../layouts/SiteLayout.astro';
+export async function getStaticPaths() {
+  return (await getCollection('pages')).map((e) => ({
+    params: { path: e.data.url === '/' ? undefined : e.data.url.replace(/^\//, '') },
+    props: { p: e.data },
+  }));
+}
+const { p } = Astro.props;
+---
+<SiteLayout p={p} />

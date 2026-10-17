@@ -1,0 +1,17 @@
+---
+/**
+ * Navigation bar. Webflow renders `w--current` + aria-current="page" on links to the current page;
+ * this re-applies that from the page's `navCurrent` list (captured from live).
+ */
+import nav from '../chrome/nav.html?raw';
+import { withMedia } from '../lib/media';
+interface Props { current: string[] }
+const { current } = Astro.props;
+let html = nav;
+for (const href of new Set(current)) {
+  // <a class="x" href="/">  →  <a aria-current="page" class="x w--current" href="/">
+  html = html.replace(new RegExp(`<a class="([^"]*)" href="${href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'g'),
+    (_m, cls) => `<a aria-current="page" class="${cls} w--current" href="${href}"`);
+}
+---
+<Fragment set:html={withMedia(html)} />

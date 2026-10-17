@@ -1,0 +1,4 @@
+url,status,redirect,in_sitemap,inlinks,title,h1,canonical,robots,hash,bytes,file,source
+/,200,,y,5,Bailey's Consolidated Services Group,Logistics & Moving Solutions,,,424d0d58941c,11722,__.html,sitemap
+/404,200,,y,0,Not Found,,,,87b6f2f044ec,2685,404.html,sitemap
+/contact,200,,,3,Contact Us,,,,f6cfcb0bfa82,7621,contact.html,/

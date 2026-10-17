@@ -1,0 +1,66 @@
+[
+ {
+  "url": "/",
+  "view": "desktop",
+  "height_live": 1885,
+  "height_local": 1885,
+  "pixel_diff_pct": 0.82,
+  "text_diff_lines": [],
+  "local_console_errors": [],
+  "local_failed_requests": [
+   "https://cdn.prod.website-files.com/66a811178a7051a0f1cb05d8%2F66aac2746bc34854196f200a_BCSG%20Intro%20revised-transcode.mp4"
+  ]
+ },
+ {
+  "url": "/contact",
+  "view": "desktop",
+  "height_live": 1218,
+  "height_local": 1218,
+  "pixel_diff_pct": 0.12,
+  "text_diff_lines": [],
+  "local_console_errors": [],
+  "local_failed_requests": []
+ },
+ {
+  "url": "/404",
+  "view": "desktop",
+  "height_live": 900,
+  "height_local": 900,
+  "pixel_diff_pct": 0.0,
+  "text_diff_lines": [],
+  "local_console_errors": [],
+  "local_failed_requests": []
+ },
+ {
+  "url": "/",
+  "view": "mobile",
+  "height_live": 3123,
+  "height_local": 3123,
+  "pixel_diff_pct": 0.33,
+  "text_diff_lines": [],
+  "local_console_errors": [],
+  "local_failed_requests": [
+   "https://cdn.prod.website-files.com/66a811178a7051a0f1cb05d8%2F66aac2746bc34854196f200a_BCSG%20Intro%20revised-transcode.mp4"
+  ]
+ },
+ {
+  "url": "/contact",
+  "view": "mobile",
+  "height_live": 1696,
+  "height_local": 1696,
+  "pixel_diff_pct": 0.31,
+  "text_diff_lines": [],
+  "local_console_errors": [],
+  "local_failed_requests": []
+ },
+ {
+  "url": "/404",
+  "view": "mobile",
+  "height_live": 900,
+  "height_local": 900,
+  "pixel_diff_pct": 0.0,
+  "text_diff_lines": [],
+  "local_console_errors": [],
+  "local_failed_requests": []
+ }
+]

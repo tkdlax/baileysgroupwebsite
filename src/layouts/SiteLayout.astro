@@ -1,0 +1,28 @@
+---
+/**
+ * Live page shell. Shared head items and end-of-body scripts are in src/chrome/*.json; nav and footer
+ * are shared components; everything else comes from the page entry.
+ */
+import head from '../chrome/head.json';
+import tail from '../chrome/tail.json';
+import footer from '../chrome/footer.html?raw';
+import Nav from '../components/Nav.astro';
+import { withMedia as m } from '../lib/media';
+import formGuard from '../lib/form-guard.js?raw';
+const { p } = Astro.props as { p: any };
+---
+<!DOCTYPE html>
+<html {...p.htmlAttrs}>
+<head>
+<Fragment set:html={m(head.join('\n'))} />
+<Fragment set:html={m(p.headPage.join('\n'))} />
+</head>
+<body {...p.bodyAttrs}>
+{p.hasNav && <Nav current={p.navCurrent ?? []} />}
+<Fragment set:html={m(p.main)} />
+{p.hasFooter && <Fragment set:html={m(footer)} />}
+<Fragment set:html={m(tail.join('\n'))} />
+<Fragment set:html={m(p.tailPage.join('\n'))} />
+<script is:inline set:html={formGuard}></script>
+</body>
+</html>
