@@ -28,10 +28,15 @@ Note: "Legacy" here is Legacy Transportation Systems (legacytrans.com), not the 
 
 | Placeholder | Fill with |
 |---|---|
-| `{{first_name}}`, `{{last_name}}`, `{{title}}`, `{{email}}` | From the request |
-| `{{phone1_label}}`/`{{phone1}}`/`{{phone1_tel}}`, `{{phone2_*}}` | As above; drop the whole phone 2 row if empty |
-| `{{website}}` | `https://www.baileysallied.com/workplace` (baileysworkplace.com does not resolve as of 2026-10-23) |
-| `{{linkedin}}` | Their profile URL; drop the LinkedIn icon cell if none |
-| `{{headshot_url}}` | `https://media.baileysallied.com/workplace-headshots/FirstName_LastName.png` (R2 `bms-media`, key `workplace-headshots/FirstName_LastName.png`, `image/png`, 230x230 round-crop source shown at 115x115) |
+| `{{first_name}}`, `{{last_name}}`, `{{job_title}}` | From the request (HTML-escaped) |
+| `{{email_address}}` | Signed-in email from the request |
+| `{{phone_type_1}}`, `{{phone_number_1}}` | Type as shown (e.g. `Mobile`) and display number, e.g. `(801) 555-0100` |
+| `{{phone_number_1_tel}}` | Full tel value **with** country code, e.g. `+18015550100` (this template has no `+1` prefix, unlike the Moving/Legacy ones) |
+| `{{phone_type_2}}`, `{{phone_number_2}}`, `{{phone_number_2_tel}}` | Same, optional: remove the whole "Optional Secondary Phone" `<tr>` if not provided |
+| `{{website_url}}` | `https://www.baileysallied.com/workplace` (baileysworkplace.com does not resolve as of 2026-10-23) |
+| `{{linkedin_url}}` | Their profile URL; drop the LinkedIn icon `<td>` if none |
+| `{{profile_photo_url}}` | `https://media.baileysallied.com/workplace-headshots/FirstName_LastName.png` (R2 `bms-media`, key `workplace-headshots/FirstName_LastName.png`, `image/png`; used twice: Outlook VML oval and the non-Outlook `<img>`) |
+
+Keep the Outlook VML circle-photo block and the `<!--[if !mso]>` fallback as is.
 
 Header, globe and LinkedIn images: `https://media.baileysallied.com/signatures/workplace/{header,globe,linkedin}.png`.
