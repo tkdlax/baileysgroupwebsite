@@ -22,3 +22,9 @@
   force = true
   [redirects.headers]
     X-From = "Netlify"
+
+# Unlisted signature-request form: never indexed (also has a robots meta tag; not in sitemap.xml).
+[[headers]]
+  for = "/signature-request*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
