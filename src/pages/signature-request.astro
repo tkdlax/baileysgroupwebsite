@@ -1,0 +1,71 @@
+---
+/**
+ * Unlisted email-signature request form (replaces the two Asana forms). noindex, not in sitemap.xml,
+ * no nav link. Posts to netlify/functions/signature-request.mjs, which emails the routed AgentMail inbox.
+ */
+import contact from '../content/pages/contact.json';
+import SiteLayout from '../layouts/SiteLayout.astro';
+const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
+const PRODUCTS = ['FTL','LTL','Ocean','Air','International','Transportation','Crating','3PL','Warehousing','Storage','Distribution','Fulfillment','E-Commerce','Parcel','Delivery','Final Mile','Cross Docking','Installation','White Glove','Consultations'];
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const field = (id: string, label: string, opts: { type?: string; req?: boolean; hint?: string; extra?: string } = {}) =>
+  `<div class="sr-f"><label for="${id}">${label}${opts.req ? ' <span aria-hidden="true">*</span>' : ''}</label>` +
+  (opts.hint ? `<div class="sr-hint" id="${id}-h">${opts.hint}</div>` : '') +
+  `<input id="${id}" name="${id}" type="${opts.type ?? 'text'}"${opts.req ? ' required' : ''}${opts.hint ? ` aria-describedby="${id}-h"` : ''} ${opts.extra ?? ''}/></div>`;
+const main = `
+<style>
+.sr-wrap{max-width:640px;margin:0 auto;padding:0 16px 60px}.sr-f{margin:0 0 18px}.sr-f label,.sr-leg{display:block;font-weight:700;margin:0 0 4px}
+.sr-f input,.sr-f select,.sr-f textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:4px;font:inherit}
+.sr-hint{font-size:14px;color:#555;margin:0 0 6px}.sr-prod{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px 12px}
+.sr-prod label{font-weight:400}.sr-hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.sr-msg{padding:16px;border-radius:4px;margin:0 0 18px}.sr-ok{background:#e8f5e9;border:1px solid #2e7d32}.sr-err{background:#fdecea;border:1px solid #c62828}
+fieldset{border:0;padding:0;margin:0}
+</style>
+<div class="section"><div class="w-container"><div class="section-title-group"><h1 class="section-heading centered">Email Signature Request</h1>
+<div class="section-subheading center">Fill out this form and we'll build your email signature, usually within 7 to 10 business days.</div></div>
+<div class="sr-wrap">
+<div id="sr-status" role="status" aria-live="polite"></div>
+<form id="sr-form" action="/api/signature-request" method="post" enctype="multipart/form-data" novalidate>
+<div class="sr-f"><label for="company">Company <span aria-hidden="true">*</span></label>
+<select id="company" name="company" required><option value="">Select your company…</option>
+<option value="baileys-group">Bailey's Group (incl. Bailey's Moving &amp; Storage and other Group companies)</option>
+<option value="baileys-logistics">Bailey's Logistics</option></select></div>
+${field('name', 'Your name', { req: true, extra: 'autocomplete="name" maxlength="100"' })}
+${field('title', 'Your title', { req: true, extra: 'autocomplete="organization-title" maxlength="120"' })}
+${field('email', 'Your email address', { type: 'email', req: true, hint: 'Use your company address (for example @baileysgroup.com or @baileyslogistics.com).', extra: 'autocomplete="email" maxlength="160"' })}
+${field('phone', 'Your phone number', { type: 'tel', req: true, hint: 'Only one phone number appears on a Bailey\'s Group signature.', extra: 'autocomplete="tel" maxlength="40"' })}
+<div class="sr-f" data-only="baileys-logistics" hidden><label for="phone_type">Phone number type</label>
+<select id="phone_type" name="phone_type"><option value="">Select…</option><option>Mobile</option><option>Office</option><option>Direct</option></select></div>
+<div data-only="baileys-logistics" hidden>${field('phone2', 'Optional: second phone number', { type: 'tel', hint: 'Include the type (mobile, office, direct…).', extra: 'maxlength="60"' })}</div>
+${field('linkedin', 'Your personal LinkedIn URL (optional)', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}
+<div class="sr-f"><label for="headshot">Your headshot <span aria-hidden="true">*</span></label>
+<div class="sr-hint" id="headshot-h">JPG or PNG, up to 10 MB. Shoulders and above, square, against a plain background (not pure white).</div>
+<input id="headshot" name="headshot" type="file" accept="image/jpeg,image/png" required aria-describedby="headshot-h"/></div>
+<fieldset class="sr-f" data-only="baileys-logistics" hidden><legend class="sr-leg">Products to feature</legend>
+<div class="sr-hint">Pick 3 or 4 (5 if they're short words).</div><div class="sr-prod">
+${PRODUCTS.map((p) => `<label><input type="checkbox" name="products" value="${esc(p)}"/> ${esc(p)}</label>`).join('')}
+</div></fieldset>
+<div class="sr-f" data-only="baileys-logistics" hidden><label for="card_address">Business card shipping address (optional)</label>
+<textarea id="card_address" name="card_address" rows="3" maxlength="400"></textarea></div>
+<div class="sr-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"/></div>
+${SITE_KEY ? `<div class="cf-turnstile sr-f" data-sitekey="${esc(SITE_KEY)}"></div>` : ''}
+<button type="submit" class="button-2 w-button">Submit request</button>
+</form></div></div></div>`;
+const p = {
+  ...contact,
+  url: '/signature-request',
+  navCurrent: [],
+  headPage: [
+    '<title>Email Signature Request | Bailey\'s Group</title>',
+    '<meta content="Request a Bailey\'s Group or Bailey\'s Logistics email signature." name="description"/>',
+    '<meta name="robots" content="noindex, nofollow"/>',
+  ],
+  main,
+  tailPage: [
+    ...contact.tailPage,
+    ...(SITE_KEY ? ['<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'] : []),
+    '<script src="/signature-request.js" defer></script>',
+  ],
+};
+---
+<SiteLayout p={p} />
