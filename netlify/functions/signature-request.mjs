@@ -3,10 +3,12 @@
  * Validates input, rejects honeypot hits, verifies Turnstile (fails closed if the secret is missing),
  * then emails the routed AgentMail inbox with the headshot attached and a fixed plain-text field block.
  *
- * Env: AGENTMAIL_API_KEY (required), TURNSTILE_SECRET_KEY (required),
+ * Requires a verified Entra ID session cookie (401 otherwise); the signed-in email is the requester identity.
+ * Env: SESSION_SECRET (required), AGENTMAIL_API_KEY (required), TURNSTILE_SECRET_KEY (required),
  *      AGENTMAIL_SENDER_INBOX (optional; inbox id/address to send from — defaults to the destination inbox),
  *      SIGNATURE_DRY_RUN=1 (optional; validate and log the payload shape, send nothing).
  */
+import { sessionFrom } from '../lib/session.mjs';
 export const config = { path: '/api/signature-request' };
 
 export const ROUTES = {
@@ -30,6 +32,7 @@ export function validate(fd) {
     card_address: String(fd.get('card_address') ?? '').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '').trim().slice(0, 400),
   };
   const errs = [];
+  if (fd.get('certify') !== 'yes') errs.push('Please confirm you are an employee and this request is for you.');
   if (!route) errs.push('Please choose your company.');
   if (!f.name) errs.push('Please enter your name.');
   if (!f.title) errs.push('Please enter your title.');
@@ -45,9 +48,10 @@ export function validate(fd) {
   return { errs, company, route, f, photo };
 }
 
-export function body(route, f, photoName) {
+export function body(route, f, photoName, who) {
   const L = [
     'SIGNATURE REQUEST',
+    `Submitted by (verified): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
     `Company: ${route.label}`,
     `Name: ${f.name}`,
     `Title: ${f.title}`,
@@ -76,9 +80,12 @@ async function turnstileOk(token, ip) {
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed.' });
+  const who = await sessionFrom(req, process.env.SESSION_SECRET);
+  if (!who) return json(401, { error: 'Please sign in with your company Microsoft account.', login: '/api/auth/login?return=/signature-request' });
   let fd;
   try { fd = await req.formData(); } catch { return json(400, { error: 'We couldn\'t read that submission. Please try again.' }); }
   if (clean(fd.get('website'), 200)) return json(200, { ok: true }); // honeypot: pretend success
+  fd.set('email', who.email); // signed-in identity wins over whatever was typed
   const { errs, route, f, photo } = validate(fd);
   if (errs.length) return json(400, { error: errs.join(' ') });
   const dry = process.env.SIGNATURE_DRY_RUN === '1';
@@ -90,7 +97,7 @@ export default async (req, context) => {
   const payload = {
     to: route.to, reply_to: f.email, labels: ['signature-request'],
     subject: `Signature request: ${f.name} (${route.label})`,
-    text: body(route, f, photoName),
+    text: body(route, f, photoName, who),
     attachments: [{ filename: photoName, content_type: photo.type, content_disposition: 'attachment', content: Buffer.from(await photo.arrayBuffer()).toString('base64') }],
   };
   if (dry) { console.log('signature-request DRY RUN', JSON.stringify({ ...payload, attachments: [{ ...payload.attachments[0], content: `<${payload.attachments[0].content.length} b64 chars>` }] })); return json(200, { ok: true, dryRun: true }); }

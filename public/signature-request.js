@@ -11,7 +11,7 @@
   function errEl(el) { return document.getElementById(el.id + '-e'); }
   function setErr(el, msg) { var e = errEl(el); if (!e) return; e.textContent = msg || ''; if (msg) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid'); }
   function msgFor(el) {
-    if (el.validity.valueMissing) return el.id === 'headshot' ? 'Please choose a headshot photo.' : el.tagName === 'SELECT' ? 'Please select your company.' : 'This field is required.';
+    if (el.validity.valueMissing) return el.id === 'certify' ? 'Please check this box to continue.' : el.id === 'headshot' ? 'Please choose a headshot photo.' : el.tagName === 'SELECT' ? 'Please select your company.' : 'This field is required.';
     if (el.validity.typeMismatch) return el.type === 'email' ? 'Enter a valid email address.' : 'Enter a full URL starting with https://';
     return el.validationMessage;
   }
@@ -69,6 +69,13 @@
       img.onerror = function () { rej(new Error('read')); }; img.src = url;
     });
   }
+  fetch('/api/auth/me', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (me) {
+    if (!me) return;
+    if (form.email) form.email.value = me.email || '';
+    if (form.name && !form.name.value) form.name.value = me.name || '';
+    var who = document.getElementById('sr-who');
+    if (who) { who.textContent = 'Signed in as ' + (me.name ? me.name + ' (' + me.email + ')' : me.email) + '. '; var a = document.createElement('a'); a.href = '/api/auth/logout'; a.textContent = 'Sign out'; who.appendChild(a); who.hidden = false; }
+  }).catch(function () {});
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!checkAll()) return;
@@ -79,7 +86,7 @@
     shrink(f).then(function (file) {
       var fd = new FormData(form); fd.set('headshot', file, file.name);
       return fetch(form.action, { method: 'POST', body: fd });
-    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+    }).then(function (r) { if (r.status === 401) { location.href = '/api/auth/login?return=/signature-request'; throw new Error('auth'); } return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (x) {
         if (x.ok) { form.hidden = true; show('ok', '<strong>Thanks, your request is in.</strong> We\'ll email your new signature to you, usually within 7 to 10 business days.'); }
         else { show('err', (x.j && x.j.error) || 'Something went wrong sending your request. Please try again in a few minutes.'); if (window.turnstile) turnstile.reset(); }
