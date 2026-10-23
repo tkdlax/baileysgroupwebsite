@@ -7,6 +7,48 @@
     document.querySelectorAll('[data-only]').forEach(function (el) { el.hidden = el.getAttribute('data-only') !== company.value; });
   }
   company.addEventListener('change', sync); sync();
+  // Inline errors: show each field's message right under it.
+  function errEl(el) { return document.getElementById(el.id + '-e'); }
+  function setErr(el, msg) { var e = errEl(el); if (!e) return; e.textContent = msg || ''; if (msg) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid'); }
+  function msgFor(el) {
+    if (el.validity.valueMissing) return el.id === 'headshot' ? 'Please choose a headshot photo.' : el.tagName === 'SELECT' ? 'Please select your company.' : 'This field is required.';
+    if (el.validity.typeMismatch) return el.type === 'email' ? 'Enter a valid email address.' : 'Enter a full URL starting with https://';
+    return el.validationMessage;
+  }
+  function checkAll() {
+    var first = null;
+    form.querySelectorAll('input[id],select[id],textarea[id]').forEach(function (el) {
+      if (!errEl(el)) return;
+      var bad = !el.checkValidity(); setErr(el, bad ? msgFor(el) : ''); if (bad && !first) first = el;
+    });
+    if (first) first.focus();
+    return !first;
+  }
+  form.addEventListener('input', function (e) { if (e.target.getAttribute('aria-invalid') && e.target.checkValidity()) setErr(e.target, ''); });
+  form.addEventListener('change', function (e) { if (e.target.getAttribute('aria-invalid') && e.target.checkValidity()) setErr(e.target, ''); });
+  // Products running count.
+  var count = document.getElementById('sr-count');
+  function recount() { var n = form.querySelectorAll('input[name=products]:checked').length; if (count) count.textContent = n + ' selected'; }
+  form.addEventListener('change', function (e) { if (e.target.name === 'products') recount(); }); recount();
+  // Headshot drop area + preview.
+  var hs = form.headshot, drop = document.getElementById('sr-drop'), thumb = document.getElementById('sr-thumb'), fname = document.getElementById('sr-fname'), dropT = document.getElementById('sr-drop-t'), prevUrl;
+  function preview() {
+    var f = hs.files[0];
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
+    if (f && /^image\//.test(f.type)) { prevUrl = URL.createObjectURL(f); thumb.style.backgroundImage = 'url(' + prevUrl + ')'; thumb.textContent = ''; }
+    else { thumb.style.backgroundImage = ''; thumb.innerHTML = '&#128247;'; }
+    fname.textContent = f ? f.name + ' (' + (f.size / 1048576).toFixed(1) + ' MB)' : 'No file selected';
+    dropT.textContent = f ? 'Change photo' : 'Choose a photo or drag it here';
+  }
+  hs.addEventListener('change', preview);
+  if (drop) {
+    ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('is-over'); }); });
+    ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function () { drop.classList.remove('is-over'); }); });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files.length) { try { hs.files = e.dataTransfer.files; } catch (_) {} hs.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+  }
   // AgentMail and Netlify Functions cap a request at ~6 MB, so large photos are scaled down in the browser first.
   function shrink(file) {
     if (file.size <= SEND_MAX) return Promise.resolve(file);
@@ -29,10 +71,10 @@
   }
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!form.checkValidity()) { form.reportValidity(); return; }
+    if (!checkAll()) return;
     var f = form.headshot.files[0];
-    if (!f || !/^image\/(jpeg|png)$/.test(f.type)) return show('err', 'Please choose a JPG or PNG headshot.');
-    if (f.size > MAX) return show('err', 'That photo is over 10 MB. Please choose a smaller file.');
+    if (!f || !/^image\/(jpeg|png)$/.test(f.type)) { setErr(form.headshot, 'Please choose a JPG or PNG headshot.'); form.headshot.focus(); return; }
+    if (f.size > MAX) { setErr(form.headshot, 'That photo is over 10 MB. Please choose a smaller file.'); form.headshot.focus(); return; }
     var btn = form.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Sending…';
     shrink(f).then(function (file) {
       var fd = new FormData(form); fd.set('headshot', file, file.name);
