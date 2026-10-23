@@ -31,7 +31,7 @@
   }
   function build(b, d) {
     var h = '<table width="470" cellpadding="0" cellspacing="0" border="0" style="width:352.5pt;background-color:#ffffff;line-height:1.3"><tr>' +
-      '<td width="10" valign="top" style="width:7.5pt;border-right:solid ' + b.border + ';padding:0in 7.5pt 0in 0in"><a href="' + b.site + '" target="_blank"><img width="' + b.lw + '" height="' + b.lh + '" src="' + b.logo + '" alt="' + esc(b.alt) + '" style="border:0;display:block"></a></td>' +
+      '<td width="' + (b.lw + 10) + '" valign="top" style="width:' + (b.lw + 10) + 'px;border-right:solid ' + b.border + ';padding:0in 7.5pt 0in 0in"><a href="' + b.site + '" target="_blank"><img width="' + b.lw + '" height="' + b.lh + '" src="' + b.logo + '" alt="' + esc(b.alt) + '" style="border:0;display:block;width:' + b.lw + 'px;height:' + b.lh + 'px;max-width:none"></a></td>' +
       '<td valign="top" style="padding:0in 0in 0in 7.5pt"><b><span style="font-size:10.5pt;font-family:Arial,sans-serif;color:#646464">' + esc(d.name) + '</span></b>' +
       '<span style="font-size:10.5pt;font-family:Arial,sans-serif;color:#646464"><br>' + esc(d.title) + '</span>';
     if (d.phone1) h += line(b, d.phone1_label + ':', 'tel:+1' + tel(d.phone1), d.phone1);
@@ -43,7 +43,7 @@
   }
   var prev = document.getElementById('sr-preview'), msg = document.getElementById('sr-gen-msg'), cur = '';
   function data() {
-    return { name: val('name') || 'Your Name', title: val('title') || 'Your Title', email: val('email'),
+    return { name: val('name') || 'Your Name', title: val('title') || 'Your Title', email: form.email && form.email.checkValidity() ? val('email') : '',
       phone1_label: val('g_phone1_label') || 'office', phone1: val('g_phone1'), phone2_label: val('g_phone2_label') || 'mobile', phone2: val('g_phone2') };
   }
   function render() {
@@ -53,6 +53,7 @@
   function ready() {
     var bad = ['name', 'title', 'g_phone1'].filter(function (n) { return !val(n); });
     if (bad.length) { if (msg) msg.textContent = 'Fill in your name, title and phone 1 first.'; form.elements[bad[0]].focus(); return false; }
+    if (!val('email') || !form.email.checkValidity()) { if (msg) msg.textContent = 'Enter a valid email address.'; form.email.focus(); return false; }
     return true;
   }
   form.addEventListener('input', render); form.addEventListener('change', render);

@@ -12,8 +12,8 @@ import { sessionFrom } from '../lib/session.mjs';
 export const config = { path: '/api/signature-request' };
 
 export const ROUTES = {
-  'baileys-group': { label: "Bailey's Group", to: 'baileys-signature-requests@agentmail.to' },
-  'baileys-logistics': { label: "Bailey's Logistics", to: 'logistics-signature-requests@agentmail.to' },
+  'baileys-group': { label: "Bailey's Group", website: 'https://www.baileysgroup.com', to: 'baileys-signature-requests@agentmail.to' },
+  'baileys-logistics': { label: "Bailey's Logistics", website: 'https://baileyslogistics.com', to: 'logistics-signature-requests@agentmail.to' },
   // Workplace needs a headshot, so it goes to the Admin Assistant. (Bailey's Moving & Storage and Legacy Transportation
   // are generated in the browser by public/signature-generator.js and never reach this function.)
   'baileys-workplace': { label: "Bailey's Moving & Storage: Workplace", short: 'Workplace', to: 'baileys-signature-requests@agentmail.to',
@@ -69,7 +69,7 @@ export function validate(fd) {
 export function body(route, f, photoName, who) {
   if (route.short === 'Workplace') return [
     'SIGNATURE REQUEST (WORKPLACE)',
-    `Submitted by (verified): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
+    `Submitted by (signed in): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
     `Brand: ${route.label}`,
     'Template: docs/signature-templates/workplace.html',
     `First name: ${f.first_name}`,
@@ -85,8 +85,9 @@ export function body(route, f, photoName, who) {
   ].join('\n') + '\n';
   const L = [
     'SIGNATURE REQUEST',
-    `Submitted by (verified): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
+    `Submitted by (signed in): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
     `Brand: ${route.label}`,
+    `Website: ${route.website}`,
     `Name: ${f.name}`,
     `Title: ${f.title}`,
     `Email: ${f.email}`,
@@ -119,7 +120,7 @@ export default async (req, context) => {
   let fd;
   try { fd = await req.formData(); } catch { return json(400, { error: 'We couldn\'t read that submission. Please try again.' }); }
   if (clean(fd.get('website'), 200)) return json(200, { ok: true }); // honeypot: pretend success
-  fd.set('email', who.email); // signed-in identity wins over whatever was typed
+  // The typed email (alias allowed) goes on the signature; the signed-in identity is recorded separately below.
   const { errs, route, f, photo } = validate(fd);
   if (errs.length) return json(400, { error: errs.join(' ') });
   const dry = process.env.SIGNATURE_DRY_RUN === '1';

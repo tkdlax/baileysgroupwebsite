@@ -54,7 +54,7 @@ const main = `
 .sr-ts{margin:0 0 12px}
 fieldset.sr-sec{min-width:0}
 .sr-pair{display:grid;grid-template-columns:150px 1fr;gap:0 12px}
-.sr-preview{border:1px solid #d5dce3;border-radius:6px;padding:16px;background:#fff;overflow-x:auto;margin:0 0 16px}
+.sr-preview img{max-width:none}.sr-preview{border:1px solid #d5dce3;border-radius:6px;padding:16px;background:#fff;overflow-x:auto;margin:0 0 16px}
 .sr-actions{display:flex;gap:12px}.sr-actions .sr-submit{margin:0}.sr-alt{background:#fff;color:#00779a;border:2px solid #00779a}.sr-alt:hover{background:#e8f4f8}
 .sr-cert{display:flex;gap:10px;align-items:flex-start;font-size:16px;line-height:1.45}.sr-cert input{width:22px;height:22px;margin-top:2px;flex:none}
 .sr-f input[readonly]{background:#eef1f4;color:#3a4654}.sr-who{font-size:15px;color:#3a4654}
@@ -84,7 +84,7 @@ ${field('last_name', 'Last name', { req: true, extra: 'autocomplete="family-name
 ${field('title', 'Your title', { req: true, extra: 'autocomplete="organization-title" maxlength="120"' })}
 </fieldset>
 <fieldset class="sr-sec"><legend>Contact</legend>
-${field('email', 'Your email address', { type: 'email', req: true, hint: 'This is the company account you signed in with.', extra: 'autocomplete="email" maxlength="160" readonly' })}
+${field('email', 'Your email address', { type: 'email', req: true, hint: 'Filled in from your sign-in, using the domain for the brand you picked. Change it if you use a different address or alias.', extra: 'autocomplete="email" maxlength="160"' })}
 <div data-only="baileys-group baileys-logistics">${field('phone', 'Your phone number', { type: 'tel', req: true, hint: 'Only one phone number appears on a Bailey\'s Group signature.', extra: 'autocomplete="tel" maxlength="40"' })}
 </div><div data-only="baileys-group baileys-logistics baileys-workplace">${field('linkedin', 'Your personal LinkedIn URL', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}</div>
 </fieldset>

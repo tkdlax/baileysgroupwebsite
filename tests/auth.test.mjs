@@ -86,19 +86,19 @@ test('submit API: 401 without session, reaches validation with session', async (
   assert.match((await r2.json()).error, /confirm you are an employee/);
 });
 
-test('submit API (dry run): verified line in body, session email overrides typed email', async () => {
+test('submit API (dry run): typed email (alias) used, signed-in identity kept on its own line', async () => {
   process.env.SIGNATURE_DRY_RUN = '1';
   const logs = []; const orig = console.log; console.log = (...a) => logs.push(a.join(' '));
   const fd = new FormData();
-  Object.entries({ company: 'baileys-group', name: 'Test User', title: 'Tester', email: 'spoof@evil.com', phone: '801-555-0100', certify: 'yes' }).forEach(([k, v]) => fd.set(k, v));
+  Object.entries({ company: 'baileys-group', name: 'Test User', title: 'Tester', email: 'jake.alias@baileysgroup.com', phone: '801-555-0100', certify: 'yes' }).forEach(([k, v]) => fd.set(k, v));
   fd.set('headshot', new File([new Uint8Array(100)], 'h.jpg', { type: 'image/jpeg' }));
   const r = await submit(new Request('https://www.baileysgroup.com/api/signature-request', { method: 'POST', body: fd, headers: { cookie: await sessionCookie() } }), {});
   console.log = orig; delete process.env.SIGNATURE_DRY_RUN;
   assert.equal(r.status, 200);
   const out = logs.join('\n');
-  assert.match(out, /Submitted by \(verified\): Test User <test.user@baileysgroup.com>/);
-  assert.match(out, /Email: test.user@baileysgroup.com/);
-  assert.doesNotMatch(out, /spoof@evil.com/);
+  assert.match(out, /Submitted by \(signed in\): Test User <test.user@baileysgroup.com>/);
+  assert.match(out, /Email: jake.alias@baileysgroup.com/);
+  assert.match(out, /Website: https:\/\/www.baileysgroup.com/);
 });
 
 test('login → callback full flow with mocked Entra token endpoint', async () => {
