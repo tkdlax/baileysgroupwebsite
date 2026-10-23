@@ -53,12 +53,15 @@ const main = `
 .sr-submit:hover{background:#005f7b}.sr-submit:focus-visible{outline:3px solid #2b2a6b;outline-offset:2px}.sr-submit:disabled{opacity:.7;cursor:wait}
 .sr-ts{margin:0 0 12px}
 fieldset.sr-sec{min-width:0}
+.sr-cert{display:flex;gap:10px;align-items:flex-start;font-size:16px;line-height:1.45}.sr-cert input{width:22px;height:22px;margin-top:2px;flex:none}
+.sr-f input[readonly]{background:#eef1f4;color:#3a4654}.sr-who{font-size:15px;color:#3a4654}
 #sr-form,#sr-form legend,#sr-form .sr-hint,#sr-form .sr-count,#sr-form .sr-ferr,#sr-form label{text-align:left}#sr-form .sr-submit{text-align:center}
 @media (max-width:480px){.sr-sec{padding:18px 16px 4px}.sr-intro h1{font-size:26px}.sr-drop{padding:14px}}
 </style>
 <div class="section sr-page"><div class="sr-wrap">
 <div class="sr-intro"><h1>Email Signature Request</h1>
 <p>Fill out this form and we'll build your email signature, usually within 7 to 10 business days.</p>
+<p class="sr-who" id="sr-who" hidden></p>
 <p class="sr-reqnote">Fields marked <span class="sr-req">*</span> are required.</p></div>
 <div id="sr-status" role="status" aria-live="polite"></div>
 <form id="sr-form" action="/api/signature-request" method="post" enctype="multipart/form-data" novalidate>
@@ -73,7 +76,7 @@ ${field('name', 'Your name', { req: true, extra: 'autocomplete="name" maxlength=
 ${field('title', 'Your title', { req: true, extra: 'autocomplete="organization-title" maxlength="120"' })}
 </fieldset>
 <fieldset class="sr-sec"><legend>Contact</legend>
-${field('email', 'Your email address', { type: 'email', req: true, hint: 'Use your company address (for example @baileysgroup.com or @baileyslogistics.com).', extra: 'autocomplete="email" maxlength="160"' })}
+${field('email', 'Your email address', { type: 'email', req: true, hint: 'This is the company account you signed in with.', extra: 'autocomplete="email" maxlength="160" readonly' })}
 ${field('phone', 'Your phone number', { type: 'tel', req: true, hint: 'Only one phone number appears on a Bailey\'s Group signature.', extra: 'autocomplete="tel" maxlength="40"' })}
 ${field('linkedin', 'Your personal LinkedIn URL', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}
 </fieldset>
@@ -95,6 +98,9 @@ ${PRODUCTS.map((p) => `<label><input type="checkbox" name="products" value="${es
 </div><p class="sr-count" id="sr-count" aria-live="polite">0 selected</p></div>
 <div class="sr-f"><label for="card_address">Business card shipping address${opt}</label>
 <textarea id="card_address" name="card_address" rows="3" maxlength="400"></textarea></div>
+</fieldset>
+<fieldset class="sr-sec"><legend>Confirm</legend>
+<div class="sr-f"><label class="sr-cert"><input id="certify" name="certify" type="checkbox" value="yes" required aria-describedby="certify-e"/> I am an employee of Bailey's Group or one of its companies, and this request is for me.${req}</label><div class="sr-ferr" id="certify-e"></div></div>
 </fieldset>
 <div class="sr-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"/></div>
 ${SITE_KEY ? `<div class="cf-turnstile sr-ts" data-sitekey="${esc(SITE_KEY)}"></div>` : ''}
