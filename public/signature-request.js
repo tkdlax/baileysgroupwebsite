@@ -75,9 +75,22 @@
       img.onerror = function () { rej(new Error('read')); }; img.src = url;
     });
   }
+  // Email: default = signed-in username at the picked brand's domain; editable; stops following the brand once the user edits it.
+  var DOMAINS = { 'baileys-group': 'baileysgroup.com', 'baileys-logistics': 'baileyslogistics.com', 'baileys-moving': 'baileysallied.com',
+    'baileys-workplace': 'baileysallied.com', 'legacy-transportation': 'legacytrans.com' };
+  var signedIn = '', emailTouched = false;
+  function brandEmail() {
+    if (!form.email || emailTouched || !signedIn) return;
+    var user = signedIn.split('@')[0], d = DOMAINS[company.value];
+    form.email.value = d ? user + '@' + d : signedIn;
+    if (window.SRGen) SRGen.render();
+  }
+  if (form.email) form.email.addEventListener('input', function () { emailTouched = form.email.value.trim() !== ''; });
+  company.addEventListener('change', brandEmail);
   fetch('/api/auth/me', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (me) {
     if (!me) return;
-    if (form.email) form.email.value = me.email || '';
+    signedIn = String(me.email || '').toLowerCase();
+    if (form.email && !form.email.value) { form.email.value = signedIn; brandEmail(); }
     if (form.name && !form.name.value) form.name.value = me.name || '';
     var who = document.getElementById('sr-who');
     if (who) { who.textContent = 'Signed in as ' + (me.name ? me.name + ' (' + me.email + ')' : me.email) + '. '; var a = document.createElement('a'); a.href = '/api/auth/logout'; a.textContent = 'Sign out'; who.appendChild(a); who.hidden = false; }
