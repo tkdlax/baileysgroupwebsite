@@ -3,18 +3,26 @@
  * Validates input, rejects honeypot hits, verifies Turnstile (fails closed if the secret is missing),
  * then emails the routed AgentMail inbox with the headshot attached and a fixed plain-text field block.
  *
- * Env: AGENTMAIL_API_KEY (required), TURNSTILE_SECRET_KEY (required),
+ * Requires a verified Entra ID session cookie (401 otherwise); the signed-in email is the requester identity.
+ * Env: SESSION_SECRET (required), AGENTMAIL_API_KEY (required), TURNSTILE_SECRET_KEY (required),
  *      AGENTMAIL_SENDER_INBOX (optional; inbox id/address to send from — defaults to the destination inbox),
  *      SIGNATURE_DRY_RUN=1 (optional; validate and log the payload shape, send nothing).
  */
+import { sessionFrom } from '../lib/session.mjs';
 export const config = { path: '/api/signature-request' };
 
 export const ROUTES = {
   'baileys-group': { label: "Bailey's Group", to: 'baileys-signature-requests@agentmail.to' },
   'baileys-logistics': { label: "Bailey's Logistics", to: 'logistics-signature-requests@agentmail.to' },
+  // Workplace needs a headshot, so it goes to the Admin Assistant. (Bailey's Moving & Storage and Legacy Transportation
+  // are generated in the browser by public/signature-generator.js and never reach this function.)
+  'baileys-workplace': { label: "Bailey's Moving & Storage: Workplace", short: 'Workplace', to: 'baileys-signature-requests@agentmail.to',
+    website: 'https://www.baileysallied.com/workplace', headshotPath: 'https://media.baileysallied.com/workplace-headshots/' },
 };
 export const PRODUCTS = ['FTL','LTL','Ocean','Air','International','Transportation','Crating','3PL','Warehousing','Storage','Distribution','Fulfillment','E-Commerce','Parcel','Delivery','Final Mile','Cross Docking','Installation','White Glove','Consultations'];
 const PHONE_TYPES = ['Mobile', 'Office', 'Direct'];
+const WP_PHONE_TYPES = ['office', 'direct', 'mobile', 'cell', 'fax'];
+const fileName = (s) => s.normalize('NFKD').replace(/[^A-Za-z0-9-]+/g, '');
 const MAX_PHOTO = 4 * 1024 * 1024; // base64 + body must stay under AgentMail's/Netlify's 6 MB request cap
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 const clean = (v, max) => String(v ?? '').replace(/[\r\n\t]+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max);
@@ -27,9 +35,20 @@ export function validate(fd) {
     phone: clean(fd.get('phone'), 40), linkedin: clean(fd.get('linkedin'), 200),
     phone_type: clean(fd.get('phone_type'), 20), phone2: clean(fd.get('phone2'), 60),
     products: fd.getAll('products').map((p) => clean(p, 40)).filter((p) => PRODUCTS.includes(p)),
+    first_name: clean(fd.get('first_name'), 60), last_name: clean(fd.get('last_name'), 60),
+    phone1_label: clean(fd.get('g_phone1_label'), 20), phone2_label: clean(fd.get('g_phone2_label'), 20),
     card_address: String(fd.get('card_address') ?? '').replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, '').trim().slice(0, 400),
   };
+  const wp = company === 'baileys-workplace';
+  if (wp) {
+    // Workplace: first/last name and two typed phones (the shared phone field is hidden for this brand).
+    f.name = `${f.first_name} ${f.last_name}`.trim(); f.phone = clean(fd.get('g_phone1'), 40); f.phone2 = clean(fd.get('g_phone2'), 40);
+    if (!WP_PHONE_TYPES.includes(f.phone1_label)) f.phone1_label = 'office';
+    if (!WP_PHONE_TYPES.includes(f.phone2_label)) f.phone2_label = 'mobile';
+  }
   const errs = [];
+  if (wp && (!f.first_name || !f.last_name)) errs.push('Please enter your first and last name.');
+  if (fd.get('certify') !== 'yes') errs.push('Please confirm you are an employee and this request is for you.');
   if (!route) errs.push('Please choose your company.');
   if (!f.name) errs.push('Please enter your name.');
   if (!f.title) errs.push('Please enter your title.');
@@ -37,7 +56,9 @@ export function validate(fd) {
   if ((f.phone.match(/\d/g) || []).length < 7) errs.push('Please enter a valid phone number.');
   if (f.linkedin && !/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/\S+$/i.test(f.linkedin)) errs.push('LinkedIn URL should look like https://www.linkedin.com/in/your-name');
   if (f.phone_type && !PHONE_TYPES.includes(f.phone_type)) f.phone_type = '';
-  if (company !== 'baileys-logistics') { f.phone_type = ''; f.phone2 = ''; f.products = []; f.card_address = ''; }
+  if (!wp) { f.phone1_label = ''; f.phone2_label = ''; }
+  if (wp) { f.phone_type = ''; f.products = []; f.card_address = ''; }
+  else if (company !== 'baileys-logistics') { f.phone_type = ''; f.phone2 = ''; f.products = []; f.card_address = ''; }
   const photo = fd.get('headshot');
   if (!photo || typeof photo === 'string' || !photo.size) errs.push('Please attach a headshot photo.');
   else if (!['image/jpeg', 'image/png'].includes(photo.type)) errs.push('Headshot must be a JPG or PNG.');
@@ -45,10 +66,27 @@ export function validate(fd) {
   return { errs, company, route, f, photo };
 }
 
-export function body(route, f, photoName) {
+export function body(route, f, photoName, who) {
+  if (route.short === 'Workplace') return [
+    'SIGNATURE REQUEST (WORKPLACE)',
+    `Submitted by (verified): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
+    `Brand: ${route.label}`,
+    'Template: docs/signature-templates/workplace.html',
+    `First name: ${f.first_name}`,
+    `Last name: ${f.last_name}`,
+    `Title: ${f.title}`,
+    `Email: ${f.email}`,
+    `Phone 1: ${f.phone1_label}: ${f.phone}`,
+    `Phone 2: ${f.phone2 ? `${f.phone2_label}: ${f.phone2}` : '-'}`,
+    `LinkedIn: ${f.linkedin || '-'}`,
+    `Website: ${route.website}`,
+    `Headshot: ${photoName} -> host at ${route.headshotPath}${fileName(f.first_name)}_${fileName(f.last_name)}.png`,
+    `Submitted: ${new Date().toISOString()}`,
+  ].join('\n') + '\n';
   const L = [
     'SIGNATURE REQUEST',
-    `Company: ${route.label}`,
+    `Submitted by (verified): ${clean(who?.name, 100)} <${clean(who?.email, 160)}>`,
+    `Brand: ${route.label}`,
     `Name: ${f.name}`,
     `Title: ${f.title}`,
     `Email: ${f.email}`,
@@ -76,9 +114,12 @@ async function turnstileOk(token, ip) {
 
 export default async (req, context) => {
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed.' });
+  const who = await sessionFrom(req, process.env.SESSION_SECRET);
+  if (!who) return json(401, { error: 'Please sign in with your company Microsoft account.', login: '/api/auth/login?return=/signature-request' });
   let fd;
   try { fd = await req.formData(); } catch { return json(400, { error: 'We couldn\'t read that submission. Please try again.' }); }
   if (clean(fd.get('website'), 200)) return json(200, { ok: true }); // honeypot: pretend success
+  fd.set('email', who.email); // signed-in identity wins over whatever was typed
   const { errs, route, f, photo } = validate(fd);
   if (errs.length) return json(400, { error: errs.join(' ') });
   const dry = process.env.SIGNATURE_DRY_RUN === '1';
@@ -89,8 +130,8 @@ export default async (req, context) => {
   const photoName = `${f.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'headshot'}-headshot.${ext}`;
   const payload = {
     to: route.to, reply_to: f.email, labels: ['signature-request'],
-    subject: `Signature request: ${f.name} (${route.label})`,
-    text: body(route, f, photoName),
+    subject: `Signature request: ${f.name} (${route.short ? `${route.short}, ` : ''}${route.label})`,
+    text: body(route, f, photoName, who),
     attachments: [{ filename: photoName, content_type: photo.type, content_disposition: 'attachment', content: Buffer.from(await photo.arrayBuffer()).toString('base64') }],
   };
   if (dry) { console.log('signature-request DRY RUN', JSON.stringify({ ...payload, attachments: [{ ...payload.attachments[0], content: `<${payload.attachments[0].content.length} b64 chars>` }] })); return json(200, { ok: true, dryRun: true }); }
