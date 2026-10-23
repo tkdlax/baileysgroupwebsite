@@ -8,49 +8,98 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 const SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
 const PRODUCTS = ['FTL','LTL','Ocean','Air','International','Transportation','Crating','3PL','Warehousing','Storage','Distribution','Fulfillment','E-Commerce','Parcel','Delivery','Final Mile','Cross Docking','Installation','White Glove','Consultations'];
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const opt = ' <span class="sr-opt">(optional)</span>';
+const req = ' <span class="sr-req" aria-hidden="true">*</span>';
 const field = (id: string, label: string, opts: { type?: string; req?: boolean; hint?: string; extra?: string } = {}) =>
-  `<div class="sr-f"><label for="${id}">${label}${opts.req ? ' <span aria-hidden="true">*</span>' : ''}</label>` +
+  `<div class="sr-f"><label for="${id}">${label}${opts.req ? req : opt}</label>` +
   (opts.hint ? `<div class="sr-hint" id="${id}-h">${opts.hint}</div>` : '') +
-  `<input id="${id}" name="${id}" type="${opts.type ?? 'text'}"${opts.req ? ' required' : ''}${opts.hint ? ` aria-describedby="${id}-h"` : ''} ${opts.extra ?? ''}/></div>`;
+  `<input id="${id}" name="${id}" type="${opts.type ?? 'text'}"${opts.req ? ' required' : ''} aria-describedby="${opts.hint ? `${id}-h ` : ''}${id}-e" ${opts.extra ?? ''}/>` +
+  `<div class="sr-ferr" id="${id}-e"></div></div>`;
 const main = `
 <style>
-.sr-wrap{max-width:640px;margin:0 auto;padding:0 16px 60px}.sr-f{margin:0 0 18px}.sr-f label,.sr-leg{display:block;font-weight:700;margin:0 0 4px}
-.sr-f input,.sr-f select,.sr-f textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid #bbb;border-radius:4px;font:inherit}
-.sr-hint{font-size:14px;color:#555;margin:0 0 6px}.sr-prod{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px 12px}
-.sr-prod label{font-weight:400}.sr-hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
-.sr-msg{padding:16px;border-radius:4px;margin:0 0 18px}.sr-ok{background:#e8f5e9;border:1px solid #2e7d32}.sr-err{background:#fdecea;border:1px solid #c62828}
-fieldset{border:0;padding:0;margin:0}
+.sr-page{background:#fff;color:#1f2a36;font-family:'Open Sans',sans-serif;font-size:16px;line-height:1.5}
+.sr-wrap{max-width:640px;margin:0 auto;padding:8px 20px 64px}
+.sr-intro{text-align:center;margin:0 0 28px}
+.sr-intro h1{font-size:30px;line-height:1.25;margin:0 0 10px;color:var(--primary-darkblue,#2b2a6b);letter-spacing:.02em}
+.sr-intro p{font-size:17px;color:#3d4b59;margin:0}
+.sr-intro .sr-reqnote{font-size:15px;margin-top:10px}
+.sr-sec{border:1px solid #d5dce3;border-radius:10px;padding:22px 22px 6px;margin:0 0 22px;background:#fff}
+.sr-sec>legend,.sr-sec h2{font-size:20px;font-weight:700;color:var(--primary-darkblue,#2b2a6b);margin:0 0 16px;padding:0;line-height:1.3}
+.sr-sec>legend{float:left;width:100%}.sr-sec>legend+*{clear:both}
+.sr-f{margin:0 0 20px}
+.sr-f>label,.sr-leg{display:block;font-weight:700;font-size:16px;color:#1f2a36;margin:0 0 4px;text-align:left}
+.sr-req{color:#b3261e}.sr-opt{font-weight:400;color:#55626f}
+.sr-hint{font-size:14px;line-height:1.45;color:#55626f;margin:0 0 8px}
+.sr-f input[type=text],.sr-f input[type=email],.sr-f input[type=tel],.sr-f input[type=url],.sr-f select,.sr-f textarea{display:block;width:100%;box-sizing:border-box;min-height:48px;padding:12px 14px;border:1.5px solid #8a96a3;border-radius:6px;background:#fff;color:#1f2a36;font:inherit;font-size:16px;margin:0}
+.sr-f textarea{min-height:96px}
+.sr-f input:focus,.sr-f select:focus,.sr-f textarea:focus{outline:3px solid rgba(0,119,154,.35);outline-offset:1px;border-color:#00779a}
+.sr-f [aria-invalid=true]{border-color:#b3261e}
+.sr-ferr{color:#b3261e;font-size:14px;font-weight:600;margin-top:6px}.sr-ferr:empty{display:none}
+.sr-prod{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.sr-prod label{display:flex;align-items:center;gap:10px;font-weight:400;min-height:40px;padding:6px 10px;border:1px solid #d5dce3;border-radius:6px;cursor:pointer;margin:0}
+.sr-prod input{width:18px;height:18px;accent-color:#00779a;margin:0}
+.sr-prod label:has(input:checked){border-color:#00779a;background:#e8f4f8}
+.sr-prod label:has(input:focus-visible){outline:3px solid rgba(0,119,154,.35)}
+.sr-count{font-size:14px;font-weight:600;color:#3d4b59;margin:10px 0 0}
+.sr-drop{position:relative;display:flex;align-items:center;gap:16px;padding:18px;border:2px dashed #8a96a3;border-radius:10px;background:#f6f8fa;cursor:pointer;font-weight:400;text-align:left}
+.sr-drop.is-over,.sr-drop:hover{border-color:#00779a;background:#e8f4f8}
+.sr-drop:focus-within{outline:3px solid rgba(0,119,154,.35);border-color:#00779a}
+.sr-drop input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.sr-thumb{flex:0 0 72px;width:72px;height:72px;border-radius:8px;background:#dfe5ea center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#55626f;font-size:28px}
+.sr-drop strong{display:block;color:#00779a}.sr-drop span.sr-fname{display:block;font-size:14px;color:#3d4b59;word-break:break-all}
+.sr-hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.sr-msg{padding:16px;border-radius:6px;margin:0 0 20px;font-size:16px}.sr-ok{background:#e8f5e9;border:1px solid #2e7d32;color:#1b4d20}.sr-err{background:#fdecea;border:1px solid #b3261e;color:#7a1712}
+.sr-submit{display:block;width:100%;min-height:54px;margin:8px 0 0;padding:14px 20px;border:0;border-radius:8px;background:#00779a;color:#fff;font:inherit;font-size:18px;font-weight:700;cursor:pointer}
+.sr-submit:hover{background:#005f7b}.sr-submit:focus-visible{outline:3px solid #2b2a6b;outline-offset:2px}.sr-submit:disabled{opacity:.7;cursor:wait}
+.sr-ts{margin:0 0 12px}
+fieldset.sr-sec{min-width:0}
+#sr-form,#sr-form legend,#sr-form .sr-hint,#sr-form .sr-count,#sr-form .sr-ferr,#sr-form label{text-align:left}#sr-form .sr-submit{text-align:center}
+@media (max-width:480px){.sr-sec{padding:18px 16px 4px}.sr-intro h1{font-size:26px}.sr-drop{padding:14px}}
 </style>
-<div class="section"><div class="w-container"><div class="section-title-group"><h1 class="section-heading centered">Email Signature Request</h1>
-<div class="section-subheading center">Fill out this form and we'll build your email signature, usually within 7 to 10 business days.</div></div>
-<div class="sr-wrap">
+<div class="section sr-page"><div class="sr-wrap">
+<div class="sr-intro"><h1>Email Signature Request</h1>
+<p>Fill out this form and we'll build your email signature, usually within 7 to 10 business days.</p>
+<p class="sr-reqnote">Fields marked <span class="sr-req">*</span> are required.</p></div>
 <div id="sr-status" role="status" aria-live="polite"></div>
 <form id="sr-form" action="/api/signature-request" method="post" enctype="multipart/form-data" novalidate>
-<div class="sr-f"><label for="company">Company <span aria-hidden="true">*</span></label>
-<select id="company" name="company" required><option value="">Select your company…</option>
+<fieldset class="sr-sec"><legend>Your company</legend>
+<div class="sr-f"><label for="company">Company${req}</label>
+<select id="company" name="company" required aria-describedby="company-e"><option value="">Select your company…</option>
 <option value="baileys-group">Bailey's Group (incl. Bailey's Moving &amp; Storage and other Group companies)</option>
-<option value="baileys-logistics">Bailey's Logistics</option></select></div>
+<option value="baileys-logistics">Bailey's Logistics</option></select><div class="sr-ferr" id="company-e"></div></div>
+</fieldset>
+<fieldset class="sr-sec"><legend>About you</legend>
 ${field('name', 'Your name', { req: true, extra: 'autocomplete="name" maxlength="100"' })}
 ${field('title', 'Your title', { req: true, extra: 'autocomplete="organization-title" maxlength="120"' })}
+</fieldset>
+<fieldset class="sr-sec"><legend>Contact</legend>
 ${field('email', 'Your email address', { type: 'email', req: true, hint: 'Use your company address (for example @baileysgroup.com or @baileyslogistics.com).', extra: 'autocomplete="email" maxlength="160"' })}
 ${field('phone', 'Your phone number', { type: 'tel', req: true, hint: 'Only one phone number appears on a Bailey\'s Group signature.', extra: 'autocomplete="tel" maxlength="40"' })}
-<div class="sr-f" data-only="baileys-logistics" hidden><label for="phone_type">Phone number type</label>
-<select id="phone_type" name="phone_type"><option value="">Select…</option><option>Mobile</option><option>Office</option><option>Direct</option></select></div>
-<div data-only="baileys-logistics" hidden>${field('phone2', 'Optional: second phone number', { type: 'tel', hint: 'Include the type (mobile, office, direct…).', extra: 'maxlength="60"' })}</div>
-${field('linkedin', 'Your personal LinkedIn URL (optional)', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}
-<div class="sr-f"><label for="headshot">Your headshot <span aria-hidden="true">*</span></label>
+${field('linkedin', 'Your personal LinkedIn URL', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}
+</fieldset>
+<fieldset class="sr-sec"><legend>Headshot</legend>
+<div class="sr-f"><div class="sr-leg" id="headshot-l">Your headshot${req}</div>
 <div class="sr-hint" id="headshot-h">JPG or PNG, up to 10 MB. Shoulders and above, square, against a plain background (not pure white).</div>
-<input id="headshot" name="headshot" type="file" accept="image/jpeg,image/png" required aria-describedby="headshot-h"/></div>
-<fieldset class="sr-f" data-only="baileys-logistics" hidden><legend class="sr-leg">Products to feature</legend>
+<label class="sr-drop" id="sr-drop" for="headshot"><span class="sr-thumb" id="sr-thumb" aria-hidden="true">&#128247;</span>
+<span><strong id="sr-drop-t">Choose a photo or drag it here</strong><span class="sr-fname" id="sr-fname">No file selected</span></span>
+<input id="headshot" name="headshot" type="file" accept="image/jpeg,image/png" required aria-labelledby="headshot-l" aria-describedby="headshot-h headshot-e"/></label>
+<div class="sr-ferr" id="headshot-e"></div></div>
+</fieldset>
+<fieldset class="sr-sec" data-only="baileys-logistics" hidden><legend>Logistics details</legend>
+<div class="sr-f"><label for="phone_type">Phone number type${opt}</label>
+<select id="phone_type" name="phone_type"><option value="">Select…</option><option>Mobile</option><option>Office</option><option>Direct</option></select></div>
+${field('phone2', 'Second phone number', { hint: 'Include the type (mobile, office, direct…).', type: 'tel', extra: 'maxlength="60"' })}
+<div class="sr-f" role="group" aria-labelledby="products-l"><div class="sr-leg" id="products-l">Products to feature${opt}</div>
 <div class="sr-hint">Pick 3 or 4 (5 if they're short words).</div><div class="sr-prod">
 ${PRODUCTS.map((p) => `<label><input type="checkbox" name="products" value="${esc(p)}"/> ${esc(p)}</label>`).join('')}
-</div></fieldset>
-<div class="sr-f" data-only="baileys-logistics" hidden><label for="card_address">Business card shipping address (optional)</label>
+</div><p class="sr-count" id="sr-count" aria-live="polite">0 selected</p></div>
+<div class="sr-f"><label for="card_address">Business card shipping address${opt}</label>
 <textarea id="card_address" name="card_address" rows="3" maxlength="400"></textarea></div>
+</fieldset>
 <div class="sr-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"/></div>
-${SITE_KEY ? `<div class="cf-turnstile sr-f" data-sitekey="${esc(SITE_KEY)}"></div>` : ''}
-<button type="submit" class="button-2 w-button">Submit request</button>
-</form></div></div></div>`;
+${SITE_KEY ? `<div class="cf-turnstile sr-ts" data-sitekey="${esc(SITE_KEY)}"></div>` : ''}
+<button type="submit" class="sr-submit">Submit request</button>
+</form></div></div>`;
 const p = {
   ...contact,
   url: '/signature-request',
