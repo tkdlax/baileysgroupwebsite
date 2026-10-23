@@ -4,7 +4,13 @@
   var company = form.company, MAX = 10 * 1024 * 1024, SEND_MAX = 3.8 * 1024 * 1024;
   function show(kind, html) { status.innerHTML = '<div class="sr-msg sr-' + kind + '">' + html + '</div>'; status.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   function sync() {
-    document.querySelectorAll('[data-only]').forEach(function (el) { el.hidden = el.getAttribute('data-only') !== company.value; });
+    document.querySelectorAll('[data-only]').forEach(function (el) {
+      var off = el.getAttribute('data-only').split(' ').indexOf(company.value) < 0;
+      el.hidden = off;
+      // Hidden sections are disabled so their required fields don't block validation or get submitted.
+      el.querySelectorAll('input,select,textarea,button').forEach(function (c) { c.disabled = off; });
+    });
+    if (window.SRGen) SRGen.render();
   }
   company.addEventListener('change', sync); sync();
   // Inline errors: show each field's message right under it.

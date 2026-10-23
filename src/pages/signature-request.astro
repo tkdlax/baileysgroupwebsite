@@ -53,6 +53,9 @@ const main = `
 .sr-submit:hover{background:#005f7b}.sr-submit:focus-visible{outline:3px solid #2b2a6b;outline-offset:2px}.sr-submit:disabled{opacity:.7;cursor:wait}
 .sr-ts{margin:0 0 12px}
 fieldset.sr-sec{min-width:0}
+.sr-pair{display:grid;grid-template-columns:150px 1fr;gap:0 12px}
+.sr-preview{border:1px solid #d5dce3;border-radius:6px;padding:16px;background:#fff;overflow-x:auto;margin:0 0 16px}
+.sr-actions{display:flex;gap:12px}.sr-actions .sr-submit{margin:0}.sr-alt{background:#fff;color:#00779a;border:2px solid #00779a}.sr-alt:hover{background:#e8f4f8}
 .sr-cert{display:flex;gap:10px;align-items:flex-start;font-size:16px;line-height:1.45}.sr-cert input{width:22px;height:22px;margin-top:2px;flex:none}
 .sr-f input[readonly]{background:#eef1f4;color:#3a4654}.sr-who{font-size:15px;color:#3a4654}
 #sr-form,#sr-form legend,#sr-form .sr-hint,#sr-form .sr-count,#sr-form .sr-ferr,#sr-form label{text-align:left}#sr-form .sr-submit{text-align:center}
@@ -60,7 +63,7 @@ fieldset.sr-sec{min-width:0}
 </style>
 <div class="section sr-page"><div class="sr-wrap">
 <div class="sr-intro"><h1>Email Signature Request</h1>
-<p>Fill out this form and we'll build your email signature, usually within 7 to 10 business days.</p>
+<p>Fill out this form and we'll build your email signature, usually within 7 to 10 business days. Bailey's Moving &amp; Storage and Legacy Transportation signatures are built instantly on this page.</p>
 <p class="sr-who" id="sr-who" hidden></p>
 <p class="sr-reqnote">Fields marked <span class="sr-req">*</span> are required.</p></div>
 <div id="sr-status" role="status" aria-live="polite"></div>
@@ -68,19 +71,24 @@ fieldset.sr-sec{min-width:0}
 <fieldset class="sr-sec"><legend>Your company</legend>
 <div class="sr-f"><label for="company">Company${req}</label>
 <select id="company" name="company" required aria-describedby="company-e"><option value="">Select your company…</option>
-<option value="baileys-group">Bailey's Group (incl. Bailey's Moving &amp; Storage and other Group companies)</option>
-<option value="baileys-logistics">Bailey's Logistics</option></select><div class="sr-ferr" id="company-e"></div></div>
+<option value="baileys-group">Bailey's Group (corporate)</option>
+<option value="baileys-logistics">Bailey's Logistics</option>
+<option value="baileys-moving">Bailey's Moving &amp; Storage</option>
+<option value="baileys-workplace">Bailey's Moving &amp; Storage: Workplace</option>
+<option value="legacy-transportation">Legacy Transportation Systems</option></select><div class="sr-ferr" id="company-e"></div></div>
 </fieldset>
 <fieldset class="sr-sec"><legend>About you</legend>
-${field('name', 'Your name', { req: true, extra: 'autocomplete="name" maxlength="100"' })}
+<div data-only="baileys-group baileys-logistics baileys-moving legacy-transportation">${field('name', 'Your name', { req: true, extra: 'autocomplete="name" maxlength="100"' })}</div>
+<div data-only="baileys-workplace" hidden>${field('first_name', 'First name', { req: true, extra: 'autocomplete="given-name" maxlength="60"' })}
+${field('last_name', 'Last name', { req: true, extra: 'autocomplete="family-name" maxlength="60"' })}</div>
 ${field('title', 'Your title', { req: true, extra: 'autocomplete="organization-title" maxlength="120"' })}
 </fieldset>
 <fieldset class="sr-sec"><legend>Contact</legend>
 ${field('email', 'Your email address', { type: 'email', req: true, hint: 'This is the company account you signed in with.', extra: 'autocomplete="email" maxlength="160" readonly' })}
-${field('phone', 'Your phone number', { type: 'tel', req: true, hint: 'Only one phone number appears on a Bailey\'s Group signature.', extra: 'autocomplete="tel" maxlength="40"' })}
-${field('linkedin', 'Your personal LinkedIn URL', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}
+<div data-only="baileys-group baileys-logistics">${field('phone', 'Your phone number', { type: 'tel', req: true, hint: 'Only one phone number appears on a Bailey\'s Group signature.', extra: 'autocomplete="tel" maxlength="40"' })}
+</div><div data-only="baileys-group baileys-logistics baileys-workplace">${field('linkedin', 'Your personal LinkedIn URL', { type: 'url', hint: 'The link to your profile, e.g. https://www.linkedin.com/in/your-name', extra: 'maxlength="200" placeholder="https://www.linkedin.com/in/"' })}</div>
 </fieldset>
-<fieldset class="sr-sec"><legend>Headshot</legend>
+<fieldset class="sr-sec" data-only="baileys-group baileys-logistics baileys-workplace"><legend>Headshot</legend>
 <div class="sr-f"><div class="sr-leg" id="headshot-l">Your headshot${req}</div>
 <div class="sr-hint" id="headshot-h">JPG or PNG, up to 10 MB. Shoulders and above, square, against a plain background (not pure white).</div>
 <label class="sr-drop" id="sr-drop" for="headshot"><span class="sr-thumb" id="sr-thumb" aria-hidden="true">&#128247;</span>
@@ -99,12 +107,29 @@ ${PRODUCTS.map((p) => `<label><input type="checkbox" name="products" value="${es
 <div class="sr-f"><label for="card_address">Business card shipping address${opt}</label>
 <textarea id="card_address" name="card_address" rows="3" maxlength="400"></textarea></div>
 </fieldset>
+<fieldset class="sr-sec" data-only="baileys-moving legacy-transportation baileys-workplace" hidden><legend>Phone numbers</legend>
+<div class="sr-hint" data-only="baileys-moving legacy-transportation">These brands don't need a headshot. Your signature is built right here on this page, nothing is sent anywhere.</div>
+<div class="sr-pair"><div class="sr-f"><label for="g_phone1_label">Phone 1 type${req}</label>
+<select id="g_phone1_label" name="g_phone1_label" required><option>office</option><option>direct</option><option>mobile</option><option>cell</option><option>fax</option></select></div>
+${field('g_phone1', 'Phone 1', { type: 'tel', req: true, extra: 'autocomplete="tel" maxlength="40" placeholder="(801) 555-0100"' })}</div>
+<div class="sr-pair"><div class="sr-f"><label for="g_phone2_label">Phone 2 type${opt}</label>
+<select id="g_phone2_label" name="g_phone2_label"><option>mobile</option><option>cell</option><option>office</option><option>direct</option><option>fax</option></select></div>
+${field('g_phone2', 'Phone 2', { type: 'tel', extra: 'maxlength="40" placeholder="(801) 555-0199"' })}</div>
+</fieldset>
+<section class="sr-sec" data-only="baileys-moving legacy-transportation" hidden aria-labelledby="sr-prev-h"><h2 id="sr-prev-h">Your signature</h2>
+<div class="sr-hint">Updates as you type. Copy it and paste into Outlook: File &gt; Options &gt; Mail &gt; Signatures (or Settings &gt; Signatures in Outlook on the web).</div>
+<div class="sr-preview" id="sr-preview"></div>
+<div class="sr-actions"><button type="button" class="sr-submit" id="sr-copy">Copy signature</button><button type="button" class="sr-submit sr-alt" id="sr-dl">Download .htm</button></div>
+<p class="sr-count" id="sr-gen-msg" role="status" aria-live="polite"></p>
+</section>
+<div data-only="baileys-group baileys-logistics baileys-workplace">
 <fieldset class="sr-sec"><legend>Confirm</legend>
 <div class="sr-f"><label class="sr-cert"><input id="certify" name="certify" type="checkbox" value="yes" required aria-describedby="certify-e"/> I am an employee of Bailey's Group or one of its companies, and this request is for me.${req}</label><div class="sr-ferr" id="certify-e"></div></div>
 </fieldset>
 <div class="sr-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"/></div>
 ${SITE_KEY ? `<div class="cf-turnstile sr-ts" data-sitekey="${esc(SITE_KEY)}"></div>` : ''}
 <button type="submit" class="sr-submit">Submit request</button>
+</div>
 </form></div></div>`;
 const p = {
   ...contact,
@@ -112,13 +137,14 @@ const p = {
   navCurrent: [],
   headPage: [
     '<title>Email Signature Request | Bailey\'s Group</title>',
-    '<meta content="Request a Bailey\'s Group or Bailey\'s Logistics email signature." name="description"/>',
+    '<meta content="Request or build an email signature for Bailey\'s Group companies." name="description"/>',
     '<meta name="robots" content="noindex, nofollow"/>',
   ],
   main,
   tailPage: [
     ...contact.tailPage,
     ...(SITE_KEY ? ['<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>'] : []),
+    '<script src="/signature-generator.js" defer></script>',
     '<script src="/signature-request.js" defer></script>',
   ],
 };
