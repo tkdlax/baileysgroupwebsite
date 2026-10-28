@@ -7,3 +7,6 @@ dist/
 .DS_Store
 baseline/rendered/shots/
 __pycache__/
+
+# Netlify CLI build state (local paths, generated edge-function bundles); never commit
+.netlify/
