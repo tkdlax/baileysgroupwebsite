@@ -28,3 +28,14 @@
   for = "/signature-request*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
+
+# Security sweep 2026-10-28: baseline response headers on every page (no change to how pages look or behave).
+# Deliberately NOT set here: Content-Security-Policy (needs Jake's decision; the Webflow-era scripts and GTM would need testing).
+# Same values as www.baileysallied.com (tools/write-headers.mjs there), minus the interest-cohort token Chrome no longer recognizes.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "SAMEORIGIN"
+    Permissions-Policy = "browsing-topics=(), camera=(), display-capture=(), geolocation=(self), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=(), xr-spatial-tracking=()"
